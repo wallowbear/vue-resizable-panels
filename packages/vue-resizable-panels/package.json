@@ -1,6 +1,6 @@
 {
   "name": "vue-resizable-panels",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Vue components for resizable panel groups/layouts",
   "author": "Vue Port",
   "license": "MIT",

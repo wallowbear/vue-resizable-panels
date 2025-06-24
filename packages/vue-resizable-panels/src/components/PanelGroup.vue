@@ -137,6 +137,12 @@ const handleMouseMove = (event: MouseEvent) => {
   
   console.log('Pivot indices:', pivotIndices);
   
+  // 如果无法找到有效的pivot indices，停止处理
+  if (pivotIndices[0] === -1 || pivotIndices[1] === -1) {
+    console.warn('无法找到有效的panel索引，停止拖拽处理');
+    return;
+  }
+  
   const nextLayout = adjustLayoutByDelta({
     delta: deltaPercentage,
     initialLayout,

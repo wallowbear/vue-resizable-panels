@@ -1,10 +1,10 @@
-import { defineComponent as B, inject as O, ref as E, computed as M, watch as T, onMounted as W, onUnmounted as J, openBlock as k, createBlock as F, resolveDynamicComponent as _, normalizeClass as H, normalizeStyle as U, unref as w, withCtx as q, renderSlot as X, reactive as V, provide as Z } from "vue";
-const Y = Symbol("PanelGroupContext");
-let K = 0;
-function j(l) {
-  return l || (K++, `vue-resizable-panels:${K}`);
+import { defineComponent as G, inject as K, ref as L, computed as M, watch as Q, onMounted as O, onUnmounted as W, openBlock as B, createBlock as k, resolveDynamicComponent as F, normalizeClass as _, normalizeStyle as H, unref as w, withCtx as q, renderSlot as U, reactive as T, provide as V } from "vue";
+const X = Symbol("PanelGroupContext");
+let j = 0;
+function Y(l) {
+  return l || (j++, `vue-resizable-panels:${j}`);
 }
-const ce = /* @__PURE__ */ B({
+const ce = /* @__PURE__ */ G({
   __name: "Panel",
   props: {
     id: {},
@@ -22,329 +22,346 @@ const ce = /* @__PURE__ */ B({
     tagName: { default: "div" }
   },
   emits: ["collapse", "expand", "resize"],
-  setup(l, { expose: a, emit: n }) {
-    const o = l, t = n, u = O(Y);
-    if (!u)
+  setup(l, { expose: t, emit: e }) {
+    const a = l, o = e, d = K(X);
+    if (!d)
       throw new Error("Panel components must be rendered within a PanelGroup container");
     const {
       collapsePanel: i,
-      expandPanel: s,
-      getPanelSize: c,
-      getPanelStyle: h,
-      groupId: P,
-      isPanelCollapsed: p,
-      reevaluatePanelConstraints: r,
-      registerPanel: S,
-      resizePanel: z,
-      unregisterPanel: m
-    } = u, f = j(o.id), e = E({
+      expandPanel: r,
+      getPanelSize: p,
+      getPanelStyle: P,
+      // groupId,
+      isPanelCollapsed: h,
+      reevaluatePanelConstraints: v,
+      registerPanel: u,
+      resizePanel: S,
+      unregisterPanel: z
+    } = d, f = Y(a.id), s = L({
       callbacks: {
-        onCollapse: () => t("collapse"),
-        onExpand: () => t("expand"),
-        onResize: (g, $) => t("resize", g, $)
+        onCollapse: () => o("collapse"),
+        onExpand: () => o("expand"),
+        onResize: (m, R) => o("resize", m, R)
       },
       constraints: {
-        collapsedSize: o.collapsedSize,
-        collapsible: o.collapsible,
-        defaultSize: o.defaultSize,
-        maxSize: o.maxSize,
-        minSize: o.minSize
+        collapsedSize: a.collapsedSize,
+        collapsible: a.collapsible,
+        defaultSize: a.defaultSize,
+        maxSize: a.maxSize,
+        minSize: a.minSize
       },
       id: f,
-      idIsFromProps: o.id !== void 0,
-      order: o.order
-    }), d = M(() => {
-      const g = c(e.value);
-      return console.log(`Panel ${f} size:`, g), g;
-    }), v = M(() => p(e.value)), x = M(() => {
-      const g = h(e.value, o.defaultSize);
-      return console.log(`Panel ${f} style:`, g), {
-        ...g,
-        ...o.style
+      idIsFromProps: a.id !== void 0,
+      order: a.order
+    }), n = M(() => {
+      const m = p(s.value);
+      return console.log(`Panel ${f} size:`, m), m;
+    }), c = M(() => h(s.value)), g = M(() => {
+      const m = P(s.value, a.defaultSize);
+      return console.log(`Panel ${f} style:`, m), {
+        ...m,
+        ...a.style
       };
     });
-    return T(
+    return Q(
       () => ({
-        collapsedSize: o.collapsedSize,
-        collapsible: o.collapsible,
-        maxSize: o.maxSize,
-        minSize: o.minSize
+        collapsedSize: a.collapsedSize,
+        collapsible: a.collapsible,
+        maxSize: a.maxSize,
+        minSize: a.minSize
       }),
-      (g, $) => {
-        const L = { ...e.value.constraints };
-        e.value.constraints.collapsedSize = g.collapsedSize, e.value.constraints.collapsible = g.collapsible, e.value.constraints.maxSize = g.maxSize, e.value.constraints.minSize = g.minSize, (L.collapsedSize !== g.collapsedSize || L.collapsible !== g.collapsible || L.maxSize !== g.maxSize || L.minSize !== g.minSize) && r(e.value, L);
+      (m) => {
+        const R = { ...s.value.constraints };
+        s.value.constraints.collapsedSize = m.collapsedSize, s.value.constraints.collapsible = m.collapsible, s.value.constraints.maxSize = m.maxSize, s.value.constraints.minSize = m.minSize, (R.collapsedSize !== m.collapsedSize || R.collapsible !== m.collapsible || R.maxSize !== m.maxSize || R.minSize !== m.minSize) && v(s.value, R);
       },
       { deep: !0 }
-    ), W(() => {
-      S(e.value);
-    }), J(() => {
-      m(e.value);
-    }), a({
-      collapse: () => i(e.value),
-      expand: (g) => s(e.value, g),
+    ), O(() => {
+      u(s.value);
+    }), W(() => {
+      z(s.value);
+    }), t({
+      collapse: () => i(s.value),
+      expand: (m) => r(s.value, m),
       getId: () => f,
-      getSize: () => c(e.value),
-      isCollapsed: () => v.value,
-      isExpanded: () => !p(e.value),
-      resize: (g) => z(e.value, g)
-    }), (g, $) => (k(), F(_(g.tagName), {
-      class: H(g.className),
-      style: U(x.value),
+      getSize: () => p(s.value),
+      isCollapsed: () => c.value,
+      isExpanded: () => !h(s.value),
+      resize: (m) => S(s.value, m)
+    }), (m, R) => (B(), k(F(m.tagName), {
+      class: _(m.className),
+      style: H(g.value),
       "data-panel": !0,
       "data-panel-id": w(f),
-      "data-panel-size": d.value,
-      "data-panel-collapsible": g.collapsible || void 0,
-      "data-panel-collapsed": v.value || void 0
+      "data-panel-size": n.value,
+      "data-panel-collapsible": m.collapsible || void 0,
+      "data-panel-collapsed": c.value || void 0
     }, {
       default: q(() => [
-        X(g.$slots, "default")
+        U(m.$slots, "default")
       ]),
       _: 3
     }, 8, ["class", "style", "data-panel-id", "data-panel-size", "data-panel-collapsible", "data-panel-collapsed"]));
   }
 });
-function I(l, a) {
+function E(l, t) {
   if (!l)
-    throw new Error(a || "Assertion failed");
+    throw new Error(t || "Assertion failed");
 }
-const Q = 5;
-function N(l, a, n = Q) {
-  const o = parseFloat(l.toFixed(n)), t = parseFloat(a.toFixed(n));
-  return o < t ? -1 : o > t ? 1 : 0;
+const J = 5;
+function $(l, t, e = J) {
+  const a = parseFloat(l.toFixed(e)), o = parseFloat(t.toFixed(e));
+  return a < o ? -1 : a > o ? 1 : 0;
 }
-function b(l, a, n = Q) {
-  return N(l, a, n) === 0;
+function b(l, t, e = J) {
+  return $(l, t, e) === 0;
 }
-function G(l, a) {
-  if (l.length !== a.length)
+function N(l, t) {
+  if (l.length !== t.length)
     return !1;
-  for (let n = 0; n < l.length; n++)
-    if (!b(l[n], a[n]))
+  for (let e = 0; e < l.length; e++)
+    if (!b(l[e], t[e]))
       return !1;
   return !0;
 }
-function ee({
+function Z({
   panelConstraints: l,
-  panelIndex: a,
-  size: n
+  panelIndex: t,
+  size: e
 }) {
-  const { collapsedSize: o = 0, collapsible: t, maxSize: u = 100, minSize: i = 0 } = l[a] ?? {};
-  return t && b(n, o) ? o : n < i ? i : n > u ? u : n;
+  const { collapsedSize: a = 0, collapsible: o, maxSize: d = 100, minSize: i = 0 } = l[t] ?? {};
+  return o && b(e, a) ? a : e < i ? i : e > d ? d : e;
 }
 function C({
   panelConstraints: l,
-  panelIndex: a,
-  size: n
+  panelIndex: t,
+  size: e
 }) {
-  return ee({
+  return Z({
     panelConstraints: l,
-    panelIndex: a,
-    size: n
+    panelIndex: t,
+    size: e
   });
 }
-function ne({
+function ee({
   delta: l,
-  initialLayout: a,
-  panelConstraints: n,
-  pivotIndices: o,
-  prevLayout: t,
-  trigger: u
+  initialLayout: t,
+  panelConstraints: e,
+  pivotIndices: a,
+  prevLayout: o,
+  trigger: d
 }) {
   if (b(l, 0))
-    return a;
-  const i = [...a], [s, c] = o;
-  I(s != null, "Invalid first pivot index"), I(c != null, "Invalid second pivot index");
-  let h = 0;
-  if (u === "keyboard") {
+    return t;
+  const i = [...t], [r, p] = a;
+  E(r != null, "Invalid first pivot index"), E(p != null, "Invalid second pivot index");
+  let P = 0;
+  if (d === "keyboard") {
     {
-      const p = l < 0 ? c : s, r = n[p];
-      I(
-        r,
-        `Panel constraints not found for index ${p}`
+      const v = l < 0 ? p : r, u = e[v];
+      E(
+        u,
+        `Panel constraints not found for index ${v}`
       );
       const {
         collapsedSize: S = 0,
         collapsible: z,
-        minSize: m = 0
-      } = r;
+        minSize: f = 0
+      } = u;
       if (z) {
-        const f = a[p];
-        if (I(
-          f != null,
-          `Previous layout not found for panel index ${p}`
-        ), b(f, S)) {
-          const e = m - f;
-          N(e, Math.abs(l)) > 0 && (l = l < 0 ? 0 - e : e);
+        const s = t[v];
+        if (E(
+          s != null,
+          `Previous layout not found for panel index ${v}`
+        ), b(s, S)) {
+          const n = f - s;
+          $(n, Math.abs(l)) > 0 && (l = l < 0 ? 0 - n : n);
         }
       }
     }
     {
-      const p = l < 0 ? s : c, r = n[p];
-      I(
-        r,
-        `No panel constraints found for index ${p}`
+      const v = l < 0 ? r : p, u = e[v];
+      E(
+        u,
+        `No panel constraints found for index ${v}`
       );
       const {
         collapsedSize: S = 0,
         collapsible: z,
-        minSize: m = 0
-      } = r;
+        minSize: f = 0
+      } = u;
       if (z) {
-        const f = a[p];
-        if (I(
-          f != null,
-          `Previous layout not found for panel index ${p}`
-        ), b(f, m)) {
-          const e = f - S;
-          N(e, Math.abs(l)) > 0 && (l = l < 0 ? 0 - e : e);
+        const s = t[v];
+        if (E(
+          s != null,
+          `Previous layout not found for panel index ${v}`
+        ), b(s, f)) {
+          const n = s - S;
+          $(n, Math.abs(l)) > 0 && (l = l < 0 ? 0 - n : n);
         }
       }
     }
   }
   {
-    const p = l < 0 ? 1 : -1;
-    let r = l < 0 ? c : s, S = 0;
+    const v = l < 0 ? 1 : -1;
+    let u = l < 0 ? p : r, S = 0;
     for (; ; ) {
-      const m = a[r];
-      I(
-        m != null,
-        `Previous layout not found for panel index ${r}`
+      const f = t[u];
+      E(
+        f != null,
+        `Previous layout not found for panel index ${u}`
       );
-      const e = C({
-        panelConstraints: n,
-        panelIndex: r,
+      const n = C({
+        panelConstraints: e,
+        panelIndex: u,
         size: 100
-      }) - m;
-      if (S += e, r += p, r < 0 || r >= n.length)
+      }) - f;
+      if (S += n, u += v, u < 0 || u >= e.length)
         break;
     }
     const z = Math.min(Math.abs(l), Math.abs(S));
     l = l < 0 ? 0 - z : z;
   }
   {
-    let r = l < 0 ? s : c;
-    for (; r >= 0 && r < n.length; ) {
-      const S = Math.abs(l) - Math.abs(h), z = a[r];
-      I(
+    let u = l < 0 ? r : p;
+    for (; u >= 0 && u < e.length; ) {
+      const S = Math.abs(l) - Math.abs(P), z = t[u];
+      E(
         z != null,
-        `Previous layout not found for panel index ${r}`
+        `Previous layout not found for panel index ${u}`
       );
-      const m = z - S, f = C({
-        panelConstraints: n,
-        panelIndex: r,
-        size: m
+      const f = z - S, s = C({
+        panelConstraints: e,
+        panelIndex: u,
+        size: f
       });
-      if (!b(z, f) && (h += z - f, i[r] = f, h.toPrecision(3).localeCompare(Math.abs(l).toPrecision(3), void 0, {
+      if (!b(z, s) && (P += z - s, i[u] = s, P.toPrecision(3).localeCompare(Math.abs(l).toPrecision(3), void 0, {
         numeric: !0
       }) >= 0))
         break;
-      l < 0 ? r-- : r++;
+      l < 0 ? u-- : u++;
     }
   }
-  if (G(t, i))
-    return t;
+  if (N(o, i))
+    return o;
   {
-    const p = l < 0 ? c : s, r = a[p];
-    I(
-      r != null,
-      `Previous layout not found for panel index ${p}`
+    const v = l < 0 ? p : r, u = t[v];
+    E(
+      u != null,
+      `Previous layout not found for panel index ${v}`
     );
-    const S = r + h, z = C({
-      panelConstraints: n,
-      panelIndex: p,
+    const S = u + P, z = C({
+      panelConstraints: e,
+      panelIndex: v,
       size: S
     });
-    if (i[p] = z, !b(z, S)) {
-      let m = S - z, e = l < 0 ? c : s;
-      for (; e >= 0 && e < n.length; ) {
-        const d = i[e];
-        I(
-          d != null,
-          `Previous layout not found for panel index ${e}`
+    if (i[v] = z, !b(z, S)) {
+      let f = S - z, n = l < 0 ? p : r;
+      for (; n >= 0 && n < e.length; ) {
+        const c = i[n];
+        E(
+          c != null,
+          `Previous layout not found for panel index ${n}`
         );
-        const v = d + m, x = C({
-          panelConstraints: n,
-          panelIndex: e,
-          size: v
+        const g = c + f, x = C({
+          panelConstraints: e,
+          panelIndex: n,
+          size: g
         });
-        if (b(d, x) || (m -= x - d, i[e] = x), b(m, 0))
+        if (b(c, x) || (f -= x - c, i[n] = x), b(f, 0))
           break;
-        l > 0 ? e-- : e++;
+        l > 0 ? n-- : n++;
       }
     }
   }
-  const P = i.reduce((p, r) => r + p, 0);
-  return b(P, 100) ? i : t;
+  const h = i.reduce((v, u) => u + v, 0);
+  return b(h, 100) ? i : o;
 }
-function le(l, a, n, o) {
-  const t = o.getBoundingClientRect(), u = a === "horizontal", i = u ? l.clientX : l.clientY, s = u ? t.width : t.height;
-  return (i - n) / s * 100;
+function ne(l, t, e, a) {
+  const o = a.getBoundingClientRect(), d = t === "horizontal", i = d ? l.clientX : l.clientY, r = d ? o.width : o.height;
+  return (i - e) / r * 100;
 }
-function te({
+function le({
   panelDataArray: l
 }) {
-  const a = Array(l.length), n = [];
-  let o = 0;
-  for (let t = 0; t < l.length; t++) {
-    const u = l[t], { defaultSize: i } = u.constraints;
-    i != null ? (a[t] = i, o += i) : n.push(t);
+  const t = Array(l.length), e = [];
+  let a = 0;
+  for (let o = 0; o < l.length; o++) {
+    const d = l[o], { defaultSize: i } = d.constraints;
+    i != null ? (t[o] = i, a += i) : e.push(o);
   }
-  if (n.length > 0) {
-    const t = 100 - o, u = Math.max(0, t / n.length);
-    for (const i of n)
-      a[i] = u;
+  if (e.length > 0) {
+    const o = 100 - a, d = Math.max(0, o / e.length);
+    for (const i of e)
+      t[i] = d;
   }
-  return a;
+  return t;
 }
-function oe({
+function te({
   defaultSize: l,
-  dragState: a,
-  layout: n,
-  panelData: o,
-  panelIndex: t,
-  precision: u = 3
+  dragState: t,
+  layout: e,
+  panelData: a,
+  panelIndex: o,
+  precision: d = 3
 }) {
-  const i = n[t];
-  let s;
-  return i == null ? s = l != null ? l.toPrecision(u) : "1" : o.length === 1 ? s = "1" : s = i.toPrecision(u), {
+  const i = e[o];
+  let r;
+  return i == null ? r = l != null ? l.toPrecision(d) : "1" : a.length === 1 ? r = "1" : r = i.toPrecision(d), {
     flexBasis: 0,
-    flexGrow: s,
+    flexGrow: r,
     flexShrink: 1,
     // Without this, Panel sizes may be unintentionally overridden by their content
     overflow: "hidden",
     // Disable pointer events inside of a panel during resize
     // This avoid edge cases like nested iframes
-    pointerEvents: a !== null ? "none" : void 0
+    pointerEvents: t !== null ? "none" : void 0
   };
 }
-function ae(l, a, n) {
-  const o = parseInt(a.split("-").pop() || "0"), t = o, u = o + 1;
-  return [t, u];
+function oe(l, t = document) {
+  return Array.from(
+    t.querySelectorAll(
+      `[data-panel-resize-handle-id][data-panel-group-id="${l}"]`
+    )
+  );
 }
-function ie(l, a) {
-  const n = l === "horizontal";
-  return "clientX" in a && "clientY" in a ? n ? a.clientX : a.clientY : 0;
+function ae(l, t, e = document) {
+  const o = oe(l, e).findIndex(
+    (d) => d.getAttribute("data-panel-resize-handle-id") === t
+  );
+  return o >= 0 ? o : null;
 }
-function se({
+function ie(l, t, e) {
+  const a = ae(
+    l,
+    t,
+    e
+  );
+  return a != null ? [a, a + 1] : [-1, -1];
+}
+function se(l, t) {
+  const e = l === "horizontal";
+  return "clientX" in t && "clientY" in t ? e ? t.clientX : t.clientY : 0;
+}
+function re({
   layout: l,
-  panelConstraints: a
+  panelConstraints: t
 }) {
-  const n = [...l];
-  let o = 0;
-  for (let t = 0; t < n.length; t++) {
-    const u = n[t], i = C({
-      panelConstraints: a,
-      panelIndex: t,
-      size: u
+  const e = [...l];
+  let a = 0;
+  for (let o = 0; o < e.length; o++) {
+    const d = e[o], i = C({
+      panelConstraints: t,
+      panelIndex: o,
+      size: d
     });
-    n[t] = i, o += i;
+    e[o] = i, a += i;
   }
-  if (!b(o, 100))
-    for (let t = 0; t < n.length; t++)
-      n[t] = n[t] / o * 100;
-  return n;
+  if (!b(a, 100))
+    for (let o = 0; o < e.length; o++)
+      e[o] = e[o] / a * 100;
+  return e;
 }
-const pe = /* @__PURE__ */ B({
+const pe = /* @__PURE__ */ G({
   __name: "PanelGroup",
   props: {
     id: {},
@@ -356,164 +373,165 @@ const pe = /* @__PURE__ */ B({
     onLayout: {}
   },
   emits: ["layout"],
-  setup(l, { emit: a }) {
-    const n = l, o = a, t = j(n.id), u = E(), i = E(null), s = E([]), c = E([]);
-    E(0);
-    const h = M(() => ({
+  setup(l, { emit: t }) {
+    const e = l, a = t, o = Y(e.id), d = L(), i = L(null), r = L([]), p = L([]), P = M(() => ({
       display: "flex",
-      flexDirection: n.direction === "horizontal" ? "row" : "column",
+      flexDirection: e.direction === "horizontal" ? "row" : "column",
       height: "100%",
       overflow: "hidden",
       width: "100%",
-      ...n.style
-    })), P = (e, d) => {
-      if (console.log("Starting drag for handle:", e), !u.value)
+      ...e.style
+    })), h = (n, c) => {
+      if (console.log("Starting drag for handle:", n), !d.value)
         return;
-      const v = u.value.querySelector(
-        `[data-panel-resize-handle-id="${e}"]`
+      const g = d.value.querySelector(
+        `[data-panel-resize-handle-id="${n}"]`
       );
-      if (!v) {
-        console.error(`Drag handle element not found for id "${e}"`);
+      if (!g) {
+        console.error(`Drag handle element not found for id "${n}"`);
         return;
       }
-      const x = ie(
-        n.direction,
-        d
+      const x = se(
+        e.direction,
+        c
       );
       i.value = {
-        dragHandleId: e,
-        dragHandleRect: v.getBoundingClientRect(),
+        dragHandleId: n,
+        dragHandleRect: g.getBoundingClientRect(),
         initialCursorPosition: x,
-        initialLayout: [...s.value]
+        initialLayout: [...r.value]
       }, console.log("Drag state set:", i.value), S();
-    }, p = () => {
+    }, v = () => {
       i.value = null;
-    }, r = (e) => {
-      if (!i.value || !u.value)
+    }, u = (n) => {
+      if (!i.value || !d.value)
         return;
       console.log("Mouse move during drag");
-      const { initialCursorPosition: d, initialLayout: v, dragHandleId: x } = i.value, D = le(
-        { clientX: e.clientX, clientY: e.clientY },
-        n.direction,
-        d,
-        u.value
+      const { initialCursorPosition: c, initialLayout: g, dragHandleId: x } = i.value, I = ne(
+        { clientX: n.clientX, clientY: n.clientY },
+        e.direction,
+        c,
+        d.value
       );
-      console.log("Delta percentage:", D);
-      const R = ae(
-        t,
+      console.log("Delta percentage:", I);
+      const D = ie(
+        o,
         x,
-        u.value
+        d.value
       );
-      console.log("Pivot indices:", R);
-      const y = ne({
-        delta: D,
-        initialLayout: v,
-        panelConstraints: c.value.map((A) => A.constraints),
-        pivotIndices: R,
-        prevLayout: s.value,
+      if (console.log("Pivot indices:", D), D[0] === -1 || D[1] === -1) {
+        console.warn("无法找到有效的panel索引，停止拖拽处理");
+        return;
+      }
+      const y = ee({
+        delta: I,
+        initialLayout: g,
+        panelConstraints: p.value.map((A) => A.constraints),
+        pivotIndices: D,
+        prevLayout: r.value,
         trigger: "mouse-or-touch"
       });
-      console.log("Next layout:", y), G(s.value, y) || (s.value = y, n.onLayout && n.onLayout(y), o("layout", y));
+      console.log("Next layout:", y), N(r.value, y) || (r.value = y, e.onLayout && e.onLayout(y), a("layout", y));
     }, S = () => {
-      console.log("🎯 Adding global event listeners"), document.addEventListener("mousemove", r), document.addEventListener("mouseup", m), console.log("✅ Global event listeners added");
+      console.log("🎯 Adding global event listeners"), document.addEventListener("mousemove", u), document.addEventListener("mouseup", f), console.log("✅ Global event listeners added");
     }, z = () => {
-      console.log("🧹 Removing global event listeners"), document.removeEventListener("mousemove", r), document.removeEventListener("mouseup", m), console.log("✅ Global event listeners removed");
-    }, m = () => {
-      console.log("🛑 Stopping drag and cleanup"), p(), z();
-    }, f = V({
-      collapsePanel: (e) => {
-        console.log("collapsePanel", e);
+      console.log("🧹 Removing global event listeners"), document.removeEventListener("mousemove", u), document.removeEventListener("mouseup", f), console.log("✅ Global event listeners removed");
+    }, f = () => {
+      console.log("🛑 Stopping drag and cleanup"), v(), z();
+    }, s = T({
+      collapsePanel: (n) => {
+        console.log("collapsePanel", n);
       },
       get direction() {
-        return n.direction;
+        return e.direction;
       },
       get dragState() {
         return i.value;
       },
-      expandPanel: (e, d) => {
-        console.log("expandPanel", e, d);
+      expandPanel: (n, c) => {
+        console.log("expandPanel", n, c);
       },
-      getPanelSize: (e) => {
-        const d = c.value.findIndex((v) => v.id === e.id);
-        return s.value[d] || 0;
+      getPanelSize: (n) => {
+        const c = p.value.findIndex((g) => g.id === n.id);
+        return r.value[c] || 0;
       },
-      getPanelStyle: (e, d) => {
-        const v = c.value.findIndex((x) => x.id === e.id);
-        return oe({
-          defaultSize: d,
+      getPanelStyle: (n, c) => {
+        const g = p.value.findIndex((x) => x.id === n.id);
+        return te({
+          defaultSize: c,
           dragState: i.value,
-          layout: s.value,
-          panelData: c.value,
-          panelIndex: v
+          layout: r.value,
+          panelData: p.value,
+          panelIndex: g
         });
       },
-      groupId: t,
-      handleResizeDrag: (e, d) => {
+      groupId: o,
+      handleResizeDrag: (n, c) => {
         if (!i.value) {
-          P(e, d);
+          h(n, c);
           return;
         }
-        r(d);
+        u(c);
       },
-      isPanelCollapsed: (e) => !1,
-      isPanelExpanded: (e) => !f.isPanelCollapsed(e),
-      reevaluatePanelConstraints: (e, d) => {
-        console.log("reevaluatePanelConstraints", e, d);
+      isPanelCollapsed: (n) => !1,
+      isPanelExpanded: (n) => !s.isPanelCollapsed(n),
+      reevaluatePanelConstraints: (n, c) => {
+        console.log("reevaluatePanelConstraints", n, c);
       },
-      registerPanel: (e) => {
-        c.value.push(e), c.value.sort((x, D) => {
-          const R = x.order, y = D.order;
-          return R == null && y == null ? 0 : R == null ? -1 : y == null ? 1 : R - y;
+      registerPanel: (n) => {
+        p.value.push(n), p.value.sort((x, I) => {
+          const D = x.order, y = I.order;
+          return D == null && y == null ? 0 : D == null ? -1 : y == null ? 1 : D - y;
         });
-        const d = te({
-          panelDataArray: c.value
-        }), v = se({
-          layout: d,
-          panelConstraints: c.value.map(
+        const c = le({
+          panelDataArray: p.value
+        }), g = re({
+          layout: c,
+          panelConstraints: p.value.map(
             (x) => x.constraints
           )
         });
-        G(s.value, v) || (s.value = v, n.onLayout && n.onLayout(v), o("layout", v));
+        N(r.value, g) || (r.value = g, e.onLayout && e.onLayout(g), a("layout", g));
       },
-      resizePanel: (e, d) => {
-        const v = c.value.findIndex((x) => x.id === e.id);
-        v !== -1 && (s.value[v] = d);
+      resizePanel: (n, c) => {
+        const g = p.value.findIndex((x) => x.id === n.id);
+        g !== -1 && (r.value[g] = c);
       },
-      startDragging: P,
-      stopDragging: m,
-      unregisterPanel: (e) => {
-        const d = c.value.findIndex((v) => v.id === e.id);
-        if (d !== -1) {
-          if (c.value.splice(d, 1), s.value.splice(d, 1), c.value.length > 0) {
-            const v = s.value.reduce((x, D) => x + D, 0);
-            if (v < 100) {
-              const x = (100 - v) / s.value.length;
-              s.value = s.value.map((D) => D + x);
+      startDragging: h,
+      stopDragging: f,
+      unregisterPanel: (n) => {
+        const c = p.value.findIndex((g) => g.id === n.id);
+        if (c !== -1) {
+          if (p.value.splice(c, 1), r.value.splice(c, 1), p.value.length > 0) {
+            const g = r.value.reduce((x, I) => x + I, 0);
+            if (g < 100) {
+              const x = (100 - g) / r.value.length;
+              r.value = r.value.map((I) => I + x);
             }
           }
-          n.onLayout && n.onLayout(s.value), o("layout", s.value);
+          e.onLayout && e.onLayout(r.value), a("layout", r.value);
         }
       },
       get panelGroupElement() {
-        return u.value || null;
+        return d.value || null;
       }
     });
-    return Z(Y, f), (e, d) => (k(), F(_(e.tagName), {
+    return V(X, s), (n, c) => (B(), k(F(n.tagName), {
       ref_key: "panelGroupElementRef",
-      ref: u,
-      class: H(e.className),
-      style: U(h.value),
+      ref: d,
+      class: _(n.className),
+      style: H(P.value),
       "data-panel-group": !0,
-      "data-panel-group-direction": e.direction,
-      "data-panel-group-id": w(t)
+      "data-panel-group-direction": n.direction,
+      "data-panel-group-id": w(o)
     }, {
       default: q(() => [
-        X(e.$slots, "default")
+        U(n.$slots, "default")
       ]),
       _: 3
     }, 8, ["class", "style", "data-panel-group-direction", "data-panel-group-id"]));
   }
-}), fe = /* @__PURE__ */ B({
+}), fe = /* @__PURE__ */ G({
   __name: "PanelResizeHandle",
   props: {
     id: {},
@@ -524,62 +542,62 @@ const pe = /* @__PURE__ */ B({
     tagName: { default: "div" }
   },
   emits: ["blur", "focus", "dragging", "pointerDown", "pointerUp", "click"],
-  setup(l, { emit: a }) {
-    const n = l, o = a, t = O(Y);
-    if (!t)
+  setup(l, { emit: t }) {
+    const e = l, a = t, o = K(X);
+    if (!o)
       throw new Error("PanelResizeHandle components must be rendered within a PanelGroup container");
     const {
-      direction: u,
+      direction: d,
       groupId: i
-    } = t, s = E(), c = j(n.id), h = E(!1), P = E(!1), p = M(() => ({
+    } = o, r = L(), p = Y(e.id), P = L(!1), h = L(!1), v = M(() => ({
       touchAction: "none",
       userSelect: "none",
-      cursor: u === "horizontal" ? "col-resize" : "row-resize",
-      ...n.style
-    })), r = () => {
-      h.value = !1, o("blur");
+      cursor: d === "horizontal" ? "col-resize" : "row-resize",
+      ...e.style
+    })), u = () => {
+      P.value = !1, a("blur");
     }, S = () => {
-      h.value = !0, o("focus");
-    }, z = (e) => {
-      n.disabled || (console.log("🖱️ Mouse down on resize handle:", c), e.preventDefault(), P.value = !0, t.startDragging && t.startDragging(c, e), document.addEventListener("mousemove", m, { passive: !1 }), document.addEventListener("mouseup", f, { passive: !1 }), console.log("🎯 Started dragging, added global listeners"), o("pointerDown"), o("dragging", !0));
-    }, m = (e) => {
-      P.value && (console.log("🖱️ Mouse move during drag"), e.preventDefault(), t.handleResizeDrag && t.handleResizeDrag(c, e));
-    }, f = (e) => {
-      P.value && (console.log("🖱️ Mouse up, ending drag"), e.preventDefault(), P.value = !1, document.removeEventListener("mousemove", m), document.removeEventListener("mouseup", f), console.log("🧹 Ended dragging, removed global listeners"), o("pointerUp"), o("dragging", !1));
+      P.value = !0, a("focus");
+    }, z = (n) => {
+      e.disabled || (console.log("🖱️ Mouse down on resize handle:", p), n.preventDefault(), h.value = !0, o.startDragging && o.startDragging(p, n), document.addEventListener("mousemove", f, { passive: !1 }), document.addEventListener("mouseup", s, { passive: !1 }), console.log("🎯 Started dragging, added global listeners"), a("pointerDown"), a("dragging", !0));
+    }, f = (n) => {
+      h.value && (console.log("🖱️ Mouse move during drag"), n.preventDefault(), o.handleResizeDrag && o.handleResizeDrag(p, n));
+    }, s = (n) => {
+      h.value && (console.log("🖱️ Mouse up, ending drag"), n.preventDefault(), h.value = !1, document.removeEventListener("mousemove", f), document.removeEventListener("mouseup", s), console.log("🧹 Ended dragging, removed global listeners"), a("pointerUp"), a("dragging", !1));
     };
-    return W(() => {
-      console.log("PanelResizeHandle mounted:", c);
-    }), J(() => {
-      P.value && (document.removeEventListener("mousemove", m), document.removeEventListener("mouseup", f));
-    }), (e, d) => (k(), F(_(e.tagName), {
+    return O(() => {
+      console.log("PanelResizeHandle mounted:", p);
+    }), W(() => {
+      h.value && (document.removeEventListener("mousemove", f), document.removeEventListener("mouseup", s));
+    }), (n, c) => (B(), k(F(n.tagName), {
       ref_key: "elementRef",
-      ref: s,
-      class: H(e.className),
-      style: U(p.value),
-      tabindex: e.disabled ? void 0 : e.tabIndex,
+      ref: r,
+      class: _(n.className),
+      style: H(v.value),
+      tabindex: n.disabled ? void 0 : n.tabIndex,
       "data-panel-resize-handle": !0,
-      "data-panel-resize-handle-id": w(c),
-      "data-panel-resize-handle-enabled": !e.disabled || void 0,
-      "data-panel-resize-handle-disabled": e.disabled || void 0,
-      "data-panel-group-direction": w(u),
+      "data-panel-resize-handle-id": w(p),
+      "data-panel-resize-handle-enabled": !n.disabled || void 0,
+      "data-panel-resize-handle-disabled": n.disabled || void 0,
+      "data-panel-group-direction": w(d),
       "data-panel-group-id": w(i),
       role: "separator",
-      onBlur: r,
+      onBlur: u,
       onFocus: S,
       onMousedown: z
     }, {
       default: q(() => [
-        X(e.$slots, "default")
+        U(n.$slots, "default")
       ]),
       _: 3
     }, 40, ["class", "style", "tabindex", "data-panel-resize-handle-id", "data-panel-resize-handle-enabled", "data-panel-resize-handle-disabled", "data-panel-group-direction", "data-panel-group-id"]));
   }
 });
-function ve(l, a) {
-  if (l.length !== a.length)
+function ve(l, t) {
+  if (l.length !== t.length)
     return !1;
-  for (let n = 0; n < l.length; n++)
-    if (l[n] !== a[n])
+  for (let e = 0; e < l.length; e++)
+    if (l[e] !== t[e])
       return !1;
   return !0;
 }
@@ -588,7 +606,7 @@ export {
   pe as PanelGroup,
   fe as PanelResizeHandle,
   ve as areEqual,
-  I as assert,
-  N as fuzzyCompareNumbers,
+  E as assert,
+  $ as fuzzyCompareNumbers,
   b as fuzzyNumbersEqual
 };
