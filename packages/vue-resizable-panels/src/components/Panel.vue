@@ -44,7 +44,7 @@ const {
   expandPanel,
   getPanelSize,
   getPanelStyle,
-  groupId,
+  // groupId,
   isPanelCollapsed,
   reevaluatePanelConstraints,
   registerPanel,
@@ -97,7 +97,7 @@ watch(
     maxSize: props.maxSize,
     minSize: props.minSize,
   }),
-  (newConstraints, oldConstraints) => {
+  (newConstraints) => {
     const prevConstraints = { ...panelData.value.constraints };
     
     panelData.value.constraints.collapsedSize = newConstraints.collapsedSize;

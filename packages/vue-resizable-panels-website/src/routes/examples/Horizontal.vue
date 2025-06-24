@@ -68,9 +68,7 @@
 
 <script setup lang="ts">
 import { ref } from 'vue';
-import PanelGroup from '../../../../vue-resizable-panels/src/components/PanelGroup.vue';
-import Panel from '../../../../vue-resizable-panels/src/components/Panel.vue';
-import PanelResizeHandle from '../../../../vue-resizable-panels/src/components/PanelResizeHandle.vue';
+import { PanelGroup, Panel, PanelResizeHandle } from 'vue-resizable-panels';
 
 const layout = ref<number[]>([30, 40, 30]);
 

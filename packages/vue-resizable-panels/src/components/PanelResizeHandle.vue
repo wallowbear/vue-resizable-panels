@@ -23,7 +23,7 @@
 <script setup lang="ts">
 import { computed, inject, ref, onMounted, onUnmounted } from 'vue';
 import { PanelGroupContextKey } from '../PanelGroupContext';
-import type { ResizeEvent } from '../types';
+// 移除未使用的ResizeEvent导入
 import { useUniqueId } from '../composables/useUniqueId';
 
 export interface PanelResizeHandleProps {

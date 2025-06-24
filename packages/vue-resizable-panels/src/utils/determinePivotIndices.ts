@@ -1,7 +1,7 @@
 export function determinePivotIndices(
-  groupId: string,
+  _groupId: string,
   resizeHandleId: string,
-  panelGroupElement: HTMLElement
+  _panelGroupElement: HTMLElement
 ): [number, number] {
   // 简化实现：通过handle ID确定相邻的两个面板
   const handleIndex = parseInt(resizeHandleId.split('-').pop() || '0');

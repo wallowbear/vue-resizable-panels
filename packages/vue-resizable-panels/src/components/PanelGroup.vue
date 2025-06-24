@@ -13,8 +13,8 @@
 </template>
 
 <script setup lang="ts">
-import { computed, provide, reactive, ref, onMounted, onUnmounted, watch } from 'vue';
-import type { Direction, ResizeEvent, ResizeHandler } from '../types';
+import { computed, provide, reactive, ref } from 'vue';
+import type { Direction, ResizeEvent } from '../types';
 import { PanelGroupContextKey } from '../PanelGroupContext';
 import type { PanelGroupContext, DragState } from '../PanelGroupContext';
 import type { PanelData, PanelConstraints } from '../Panel';
@@ -27,16 +27,7 @@ import { determinePivotIndices } from '../utils/determinePivotIndices';
 import { getResizeEventCursorPosition } from '../utils/events/getResizeEventCursorPosition';
 import { validatePanelGroupLayout } from '../utils/validatePanelGroupLayout';
 import { fuzzyLayoutsEqual } from '../utils/numbers/fuzzyLayoutsEqual';
-import { 
-  registerResizeHandle as globalRegisterResizeHandle,
-  reportConstraintsViolation,
-  EXCEEDED_HORIZONTAL_MIN,
-  EXCEEDED_HORIZONTAL_MAX,
-  EXCEEDED_VERTICAL_MIN,
-  EXCEEDED_VERTICAL_MAX,
-  type ResizeHandlerAction,
-  type SetResizeHandlerState
-} from '../utils/panelResizeHandleRegistry';
+// 移除未使用的导入
 
 export interface PanelGroupProps {
   id?: string | null;
@@ -64,7 +55,6 @@ const panelGroupElementRef = ref<HTMLElement>();
 const dragState = ref<DragState | null>(null);
 const layout = ref<number[]>([]);
 const panelDataArray = ref<PanelData[]>([]);
-const prevDeltaRef = ref<number>(0);
 
 const groupStyle = computed(() => {
   return {
@@ -79,18 +69,7 @@ const groupStyle = computed(() => {
 
 // 移除registerResizeHandle - 不再需要
 
-// 判断事件类型的辅助函数
-function isKeyDown(event: ResizeEvent): event is KeyboardEvent {
-  return event.type === 'keydown';
-}
-
-function isPointerEvent(event: ResizeEvent): event is PointerEvent {
-  return event.type.startsWith('pointer');
-}
-
-function isMouseEvent(event: ResizeEvent): event is MouseEvent {
-  return event.type.startsWith('mouse');
-}
+// 移除未使用的辅助函数
 
 // 正确的startDragging实现
 const startDragging = (dragHandleId: string, event: ResizeEvent) => {
@@ -236,7 +215,7 @@ const context: PanelGroupContext = reactive({
     // 使用现有的handleMouseMove逻辑
     handleMouseMove(event);
   },
-  isPanelCollapsed: (panelData: PanelData) => {
+  isPanelCollapsed: (_panelData: PanelData) => {
     return false;
   },
   isPanelExpanded: (panelData: PanelData) => {
