@@ -77,20 +77,7 @@ const groupStyle = computed(() => {
   };
 });
 
-// 简化的registerResizeHandle实现
-const registerResizeHandle = (dragHandleId: string): ResizeHandler => {
-  console.log('Registering resize handle:', dragHandleId);
-  
-  return function resizeHandler(event: ResizeEvent) {
-    console.log('ResizeHandler called for:', dragHandleId, event.type);
-    
-    // 开始拖动
-    startDragging(dragHandleId, event);
-    
-    // 添加全局事件监听
-    addGlobalEventListeners();
-  };
-};
+// 移除registerResizeHandle - 不再需要
 
 // 判断事件类型的辅助函数
 function isKeyDown(event: ResizeEvent): event is KeyboardEvent {
@@ -105,8 +92,10 @@ function isMouseEvent(event: ResizeEvent): event is MouseEvent {
   return event.type.startsWith('mouse');
 }
 
-// React版本的startDragging实现
+// 正确的startDragging实现
 const startDragging = (dragHandleId: string, event: ResizeEvent) => {
+  console.log('Starting drag for handle:', dragHandleId);
+  
   if (!panelGroupElementRef.value) {
     return;
   }
@@ -131,6 +120,11 @@ const startDragging = (dragHandleId: string, event: ResizeEvent) => {
     initialCursorPosition,
     initialLayout: [...layout.value],
   };
+  
+  console.log('Drag state set:', dragState.value);
+  
+  // 添加全局事件监听器
+  addGlobalEventListeners();
 };
 
 const stopDragging = () => {
@@ -138,9 +132,13 @@ const stopDragging = () => {
 };
 
 const handleMouseMove = (event: MouseEvent) => {
-  if (!dragState.value || !panelGroupElementRef.value) return;
+  if (!dragState.value || !panelGroupElementRef.value) {
+    return;
+  }
 
-  const { initialCursorPosition, initialLayout } = dragState.value;
+  console.log('Mouse move during drag');
+
+  const { initialCursorPosition, initialLayout, dragHandleId } = dragState.value;
   
   const deltaPercentage = calculateDeltaPercentage(
     { clientX: event.clientX, clientY: event.clientY },
@@ -149,12 +147,16 @@ const handleMouseMove = (event: MouseEvent) => {
     panelGroupElementRef.value
   );
 
+  console.log('Delta percentage:', deltaPercentage);
+
   // 根据拖拽的handle确定相邻面板
   const pivotIndices = determinePivotIndices(
     groupId,
-    dragState.value.dragHandleId,
+    dragHandleId,
     panelGroupElementRef.value
   );
+  
+  console.log('Pivot indices:', pivotIndices);
   
   const nextLayout = adjustLayoutByDelta({
     delta: deltaPercentage,
@@ -164,6 +166,8 @@ const handleMouseMove = (event: MouseEvent) => {
     prevLayout: layout.value,
     trigger: "mouse-or-touch",
   });
+
+  console.log('Next layout:', nextLayout);
 
   if (!fuzzyLayoutsEqual(layout.value, nextLayout)) {
     layout.value = nextLayout;
@@ -178,16 +182,21 @@ const handleMouseMove = (event: MouseEvent) => {
 
 // 添加全局事件监听
 const addGlobalEventListeners = () => {
+  console.log('🎯 Adding global event listeners');
   document.addEventListener('mousemove', handleMouseMove);
   document.addEventListener('mouseup', stopDraggingAndCleanup);
+  console.log('✅ Global event listeners added');
 };
 
 const removeGlobalEventListeners = () => {
+  console.log('🧹 Removing global event listeners');
   document.removeEventListener('mousemove', handleMouseMove);
   document.removeEventListener('mouseup', stopDraggingAndCleanup);
+  console.log('✅ Global event listeners removed');
 };
 
 const stopDraggingAndCleanup = () => {
+  console.log('🛑 Stopping drag and cleanup');
   stopDragging();
   removeGlobalEventListeners();
 };
@@ -217,6 +226,16 @@ const context: PanelGroupContext = reactive({
     });
   },
   groupId,
+  handleResizeDrag: (dragHandleId: string, event: MouseEvent) => {
+    // 如果没有拖动状态，先初始化
+    if (!dragState.value) {
+      startDragging(dragHandleId, event);
+      return;
+    }
+    
+    // 使用现有的handleMouseMove逻辑
+    handleMouseMove(event);
+  },
   isPanelCollapsed: (panelData: PanelData) => {
     return false;
   },
@@ -264,7 +283,7 @@ const context: PanelGroupContext = reactive({
       emit('layout', nextLayout);
     }
   },
-  registerResizeHandle,
+
   resizePanel: (panelData: PanelData, size: number) => {
     const index = panelDataArray.value.findIndex(pd => pd.id === panelData.id);
     if (index !== -1) {

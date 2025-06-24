@@ -23,6 +23,7 @@ export interface PanelGroupContext {
     defaultSize: number | undefined
   ) => Record<string, any>;
   groupId: string;
+  handleResizeDrag: (dragHandleId: string, event: MouseEvent) => void;
   isPanelCollapsed: (panelData: PanelData) => boolean;
   isPanelExpanded: (panelData: PanelData) => boolean;
   reevaluatePanelConstraints: (
@@ -30,7 +31,6 @@ export interface PanelGroupContext {
     prevConstraints: PanelConstraints
   ) => void;
   registerPanel: (panelData: PanelData) => void;
-  registerResizeHandle: (dragHandleId: string) => ResizeHandler;
   resizePanel: (panelData: PanelData, size: number) => void;
   startDragging: (dragHandleId: string, event: ResizeEvent) => void;
   stopDragging: () => void;

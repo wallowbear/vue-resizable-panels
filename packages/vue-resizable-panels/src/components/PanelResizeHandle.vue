@@ -15,16 +15,15 @@
     @blur="handleBlur"
     @focus="handleFocus"
     @mousedown="handleMouseDown"
-    @pointerdown="handlePointerDown"
   >
     <slot />
   </component>
 </template>
 
 <script setup lang="ts">
-import { computed, inject, ref, onMounted, onUnmounted, watch } from 'vue';
+import { computed, inject, ref, onMounted, onUnmounted } from 'vue';
 import { PanelGroupContextKey } from '../PanelGroupContext';
-import type { ResizeEvent, ResizeHandler } from '../types';
+import type { ResizeEvent } from '../types';
 import { useUniqueId } from '../composables/useUniqueId';
 
 export interface PanelResizeHandleProps {
@@ -61,15 +60,12 @@ if (!context) {
 const {
   direction,
   groupId,
-  registerResizeHandle,
-  startDragging,
-  stopDragging,
 } = context;
 
 const elementRef = ref<HTMLElement>();
 const resizeHandleId = useUniqueId(props.id);
-const resizeHandler = ref<ResizeHandler | null>(null);
 const isFocused = ref(false);
+const isDragging = ref(false);
 
 const handleStyle = computed(() => {
   return {
@@ -93,50 +89,65 @@ const handleFocus = () => {
 const handleMouseDown = (event: MouseEvent) => {
   if (props.disabled) return;
   
-  console.log('Mouse down on resize handle:', resizeHandleId);
+  console.log('🖱️ Mouse down on resize handle:', resizeHandleId);
   event.preventDefault();
   
-  if (resizeHandler.value) {
-    resizeHandler.value(event);
+  isDragging.value = true;
+  
+  // 初始化拖动状态
+  if (context.startDragging) {
+    context.startDragging(resizeHandleId, event);
   }
   
+  // 立即添加全局事件监听器
+  document.addEventListener('mousemove', handleMouseMove, { passive: false });
+  document.addEventListener('mouseup', handleMouseUp, { passive: false });
+  
+  console.log('🎯 Started dragging, added global listeners');
+  
   emit('pointerDown');
+  emit('dragging', true);
 };
 
-const handlePointerDown = (event: PointerEvent) => {
-  if (props.disabled) return;
+const handleMouseMove = (event: MouseEvent) => {
+  if (!isDragging.value) return;
   
-  console.log('Pointer down on resize handle:', resizeHandleId);
+  console.log('🖱️ Mouse move during drag');
   event.preventDefault();
   
-  if (resizeHandler.value) {
-    resizeHandler.value(event);
+  // 调用context的拖动处理逻辑
+  if (context.handleResizeDrag) {
+    context.handleResizeDrag(resizeHandleId, event);
   }
-  
-  emit('pointerDown');
 };
 
-watch(
-  () => props.disabled,
-  (disabled) => {
-    if (disabled) {
-      resizeHandler.value = null;
-    } else {
-      const handler = registerResizeHandle(resizeHandleId);
-      resizeHandler.value = handler;
-    }
-  }
-);
+const handleMouseUp = (event: MouseEvent) => {
+  if (!isDragging.value) return;
+  
+  console.log('🖱️ Mouse up, ending drag');
+  event.preventDefault();
+  
+  isDragging.value = false;
+  
+  // 移除全局事件监听器
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', handleMouseUp);
+  
+  console.log('🧹 Ended dragging, removed global listeners');
+  
+  emit('pointerUp');
+  emit('dragging', false);
+};
 
 onMounted(() => {
   console.log('PanelResizeHandle mounted:', resizeHandleId);
-  if (!props.disabled) {
-    const handler = registerResizeHandle(resizeHandleId);
-    resizeHandler.value = handler;
-  }
 });
 
 onUnmounted(() => {
-  resizeHandler.value = null;
+  // 确保清理事件监听器
+  if (isDragging.value) {
+    document.removeEventListener('mousemove', handleMouseMove);
+    document.removeEventListener('mouseup', handleMouseUp);
+  }
 });
 </script> 

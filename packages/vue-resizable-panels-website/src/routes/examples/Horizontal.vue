@@ -14,13 +14,15 @@
       >
         <Panel 
           class="panel left-panel"
-          :default-size="30" 
+          :default-size="25" 
           :min-size="20"
+          :max-size="30"
         >
           <div class="panel-content">
             <h3>左侧面板</h3>
             <p>最小尺寸: 20%</p>
-            <p>默认尺寸: 30%</p>
+            <p>最大尺寸: 30%</p>
+            <p>默认尺寸: 25%</p>
             <p>当前尺寸: {{ Math.round(layout[0] || 0) }}%</p>
           </div>
         </Panel>
@@ -30,10 +32,12 @@
         <Panel 
           class="panel middle-panel"
           :min-size="30"
+          :max-size="40"
         >
           <div class="panel-content">
             <h3>中间面板</h3>
             <p>最小尺寸: 30%</p>
+            <p>最大尺寸: 40%</p>
             <p>当前尺寸: {{ Math.round(layout[1] || 0) }}%</p>
           </div>
         </Panel>
