@@ -117,8 +117,9 @@ watch(
   { deep: true }
 );
 
-// 立即注册面板，而不是等到mounted
-registerPanel(panelData.value);
+onMounted(() => {
+  registerPanel(panelData.value);
+});
 
 onUnmounted(() => {
   unregisterPanel(panelData.value);

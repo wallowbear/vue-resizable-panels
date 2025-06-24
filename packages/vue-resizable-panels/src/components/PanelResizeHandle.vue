@@ -11,10 +11,11 @@
     :data-panel-resize-handle-disabled="disabled || undefined"
     :data-panel-group-direction="direction"
     :data-panel-group-id="groupId"
-    :data-panel-resize-handle-state="resizeHandlerState"
     role="separator"
     @blur="handleBlur"
     @focus="handleFocus"
+    @mousedown="handleMouseDown"
+    @pointerdown="handlePointerDown"
   >
     <slot />
   </component>
@@ -23,14 +24,8 @@
 <script setup lang="ts">
 import { computed, inject, ref, onMounted, onUnmounted, watch } from 'vue';
 import { PanelGroupContextKey } from '../PanelGroupContext';
-import type { ResizeEvent } from '../types';
+import type { ResizeEvent, ResizeHandler } from '../types';
 import { useUniqueId } from '../composables/useUniqueId';
-import { 
-  registerResizeHandle,
-  type ResizeHandlerAction,
-  type SetResizeHandlerState,
-  type PointerHitAreaMargins
-} from '../utils/panelResizeHandleRegistry';
 
 export interface PanelResizeHandleProps {
   id?: string | null;
@@ -39,7 +34,6 @@ export interface PanelResizeHandleProps {
   style?: Record<string, any>;
   tabIndex?: number;
   tagName?: string;
-  hitAreaMargins?: PointerHitAreaMargins;
 }
 
 const props = withDefaults(defineProps<PanelResizeHandleProps>(), {
@@ -48,7 +42,6 @@ const props = withDefaults(defineProps<PanelResizeHandleProps>(), {
   style: () => ({}),
   tabIndex: 0,
   tagName: 'div',
-  hitAreaMargins: () => ({ coarse: 15, fine: 5 }),
 });
 
 const emit = defineEmits<{
@@ -68,20 +61,21 @@ if (!context) {
 const {
   direction,
   groupId,
+  registerResizeHandle,
   startDragging,
   stopDragging,
 } = context;
 
 const elementRef = ref<HTMLElement>();
 const resizeHandleId = useUniqueId(props.id);
-const resizeHandlerState = ref<'inactive' | 'hover' | 'drag'>('inactive');
+const resizeHandler = ref<ResizeHandler | null>(null);
 const isFocused = ref(false);
-const unregisterResizeHandle = ref<(() => void) | null>(null);
 
 const handleStyle = computed(() => {
   return {
     touchAction: 'none',
     userSelect: 'none',
+    cursor: direction === 'horizontal' ? 'col-resize' : 'row-resize',
     ...props.style,
   };
 });
@@ -96,96 +90,53 @@ const handleFocus = () => {
   emit('focus');
 };
 
-// React版本的setResizeHandlerState实现
-const setResizeHandlerState: SetResizeHandlerState = (
-  action: ResizeHandlerAction,
-  isActive: boolean,
-  event: ResizeEvent | null
-) => {
-  if (!isActive) {
-    resizeHandlerState.value = 'inactive';
-    return;
+const handleMouseDown = (event: MouseEvent) => {
+  if (props.disabled) return;
+  
+  console.log('Mouse down on resize handle:', resizeHandleId);
+  event.preventDefault();
+  
+  if (resizeHandler.value) {
+    resizeHandler.value(event);
   }
-
-  let didMove = false;
-
-  switch (action) {
-    case 'down': {
-      resizeHandlerState.value = 'drag';
-      didMove = false;
-
-      if (event) {
-        startDragging(resizeHandleId, event);
-      }
-
-      emit('dragging', true);
-      emit('pointerDown');
-      break;
-    }
-    case 'move': {
-      didMove = true;
-
-      if (resizeHandlerState.value !== 'drag') {
-        resizeHandlerState.value = 'hover';
-      }
-      break;
-    }
-    case 'up': {
-      resizeHandlerState.value = 'hover';
-
-      stopDragging();
-
-      emit('dragging', false);
-      emit('pointerUp');
-
-      if (!didMove) {
-        emit('click');
-      }
-      break;
-    }
-  }
+  
+  emit('pointerDown');
 };
 
-// 注册和注销handle
-const registerHandle = () => {
-  if (props.disabled || !elementRef.value) {
-    return;
+const handlePointerDown = (event: PointerEvent) => {
+  if (props.disabled) return;
+  
+  console.log('Pointer down on resize handle:', resizeHandleId);
+  event.preventDefault();
+  
+  if (resizeHandler.value) {
+    resizeHandler.value(event);
   }
-
-  const unregister = registerResizeHandle(
-    resizeHandleId,
-    elementRef.value,
-    direction,
-    props.hitAreaMargins,
-    setResizeHandlerState
-  );
-
-  unregisterResizeHandle.value = unregister;
-};
-
-const unregisterHandle = () => {
-  if (unregisterResizeHandle.value) {
-    unregisterResizeHandle.value();
-    unregisterResizeHandle.value = null;
-  }
+  
+  emit('pointerDown');
 };
 
 watch(
   () => props.disabled,
   (disabled) => {
     if (disabled) {
-      unregisterHandle();
+      resizeHandler.value = null;
     } else {
-      registerHandle();
+      const handler = registerResizeHandle(resizeHandleId);
+      resizeHandler.value = handler;
     }
   }
 );
 
 onMounted(() => {
-  registerHandle();
+  console.log('PanelResizeHandle mounted:', resizeHandleId);
+  if (!props.disabled) {
+    const handler = registerResizeHandle(resizeHandleId);
+    resizeHandler.value = handler;
+  }
 });
 
 onUnmounted(() => {
-  unregisterHandle();
+  resizeHandler.value = null;
 });
 </script> 

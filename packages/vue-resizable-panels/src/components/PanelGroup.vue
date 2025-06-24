@@ -77,103 +77,18 @@ const groupStyle = computed(() => {
   };
 });
 
-// React版本的registerResizeHandle实现
+// 简化的registerResizeHandle实现
 const registerResizeHandle = (dragHandleId: string): ResizeHandler => {
-  let isRTL = false;
-
-  const panelGroupElement = panelGroupElementRef.value;
-  if (panelGroupElement) {
-    const style = window.getComputedStyle(panelGroupElement, null);
-    if (style.getPropertyValue("direction") === "rtl") {
-      isRTL = true;
-    }
-  }
-
+  console.log('Registering resize handle:', dragHandleId);
+  
   return function resizeHandler(event: ResizeEvent) {
-    event.preventDefault();
-
-    const panelGroupElement = panelGroupElementRef.value;
-    if (!panelGroupElement) {
-      return;
-    }
-
-    const { initialLayout } = dragState.value ?? {};
-
-    const pivotIndices = determinePivotIndices(
-      groupId,
-      dragHandleId,
-      panelGroupElement
-    );
-
-    const currentCursorPosition = getResizeEventCursorPosition(props.direction, event);
-    const { initialCursorPosition } = dragState.value || { initialCursorPosition: currentCursorPosition };
+    console.log('ResizeHandler called for:', dragHandleId, event.type);
     
-    let delta = calculateDeltaPercentage(
-      { clientX: ('clientX' in event) ? event.clientX : 0, clientY: ('clientY' in event) ? event.clientY : 0 },
-      props.direction,
-      initialCursorPosition,
-      panelGroupElement
-    );
-
-    const isHorizontal = props.direction === "horizontal";
-
-    if (isHorizontal && isRTL) {
-      delta = -delta;
-    }
-
-    const panelConstraints = panelDataArray.value.map(
-      (panelData) => panelData.constraints
-    );
-
-    const nextLayout = adjustLayoutByDelta({
-      delta,
-      initialLayout: initialLayout ?? layout.value,
-      panelConstraints,
-      pivotIndices,
-      prevLayout: layout.value,
-      trigger: isKeyDown(event) ? "keyboard" : "mouse-or-touch",
-    });
-
-    const layoutChanged = !fuzzyLayoutsEqual(layout.value, nextLayout);
-
-    // Only update the cursor for layout changes triggered by touch/mouse events (not keyboard)
-    // Update the cursor even if the layout hasn't changed (we may need to show an invalid cursor state)
-    if (isPointerEvent(event) || isMouseEvent(event)) {
-      // Watch for multiple subsequent deltas; this might occur for tiny cursor movements.
-      // In this case, Panel sizes might not change–
-      // but updating cursor in this scenario would cause a flicker.
-      if (prevDeltaRef.value != delta) {
-        prevDeltaRef.value = delta;
-
-        if (!layoutChanged && delta !== 0) {
-          // If the pointer has moved too far to resize the panel any further, note this so we can update the cursor.
-          // This mimics VS Code behavior.
-          if (isHorizontal) {
-            reportConstraintsViolation(
-              dragHandleId,
-              delta < 0 ? EXCEEDED_HORIZONTAL_MIN : EXCEEDED_HORIZONTAL_MAX
-            );
-          } else {
-            reportConstraintsViolation(
-              dragHandleId,
-              delta < 0 ? EXCEEDED_VERTICAL_MIN : EXCEEDED_VERTICAL_MAX
-            );
-          }
-        } else {
-          reportConstraintsViolation(dragHandleId, 0);
-        }
-      }
-    }
-
-    if (layoutChanged) {
-      layout.value = nextLayout;
-
-      if (props.onLayout) {
-        props.onLayout(nextLayout);
-      }
-
-      emit('layout', nextLayout);
-    }
+    // 开始拖动
+    startDragging(dragHandleId, event);
+    
+    // 添加全局事件监听
+    addGlobalEventListeners();
   };
 };
 
@@ -220,6 +135,61 @@ const startDragging = (dragHandleId: string, event: ResizeEvent) => {
 
 const stopDragging = () => {
   dragState.value = null;
+};
+
+const handleMouseMove = (event: MouseEvent) => {
+  if (!dragState.value || !panelGroupElementRef.value) return;
+
+  const { initialCursorPosition, initialLayout } = dragState.value;
+  
+  const deltaPercentage = calculateDeltaPercentage(
+    { clientX: event.clientX, clientY: event.clientY },
+    props.direction,
+    initialCursorPosition,
+    panelGroupElementRef.value
+  );
+
+  // 根据拖拽的handle确定相邻面板
+  const pivotIndices = determinePivotIndices(
+    groupId,
+    dragState.value.dragHandleId,
+    panelGroupElementRef.value
+  );
+  
+  const nextLayout = adjustLayoutByDelta({
+    delta: deltaPercentage,
+    initialLayout,
+    panelConstraints: panelDataArray.value.map(p => p.constraints),
+    pivotIndices,
+    prevLayout: layout.value,
+    trigger: "mouse-or-touch",
+  });
+
+  if (!fuzzyLayoutsEqual(layout.value, nextLayout)) {
+    layout.value = nextLayout;
+    
+    if (props.onLayout) {
+      props.onLayout(nextLayout);
+    }
+    
+    emit('layout', nextLayout);
+  }
+};
+
+// 添加全局事件监听
+const addGlobalEventListeners = () => {
+  document.addEventListener('mousemove', handleMouseMove);
+  document.addEventListener('mouseup', stopDraggingAndCleanup);
+};
+
+const removeGlobalEventListeners = () => {
+  document.removeEventListener('mousemove', handleMouseMove);
+  document.removeEventListener('mouseup', stopDraggingAndCleanup);
+};
+
+const stopDraggingAndCleanup = () => {
+  stopDragging();
+  removeGlobalEventListeners();
 };
 
 // 创建上下文
@@ -302,7 +272,7 @@ const context: PanelGroupContext = reactive({
     }
   },
   startDragging,
-  stopDragging,
+  stopDragging: stopDraggingAndCleanup,
   unregisterPanel: (panelData: PanelData) => {
     const index = panelDataArray.value.findIndex(pd => pd.id === panelData.id);
     if (index !== -1) {
