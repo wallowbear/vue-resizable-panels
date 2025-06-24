@@ -5,52 +5,54 @@
     :class="className"
     :style="groupStyle"
     :data-panel-group="true"
-    :data-panel-group-id="groupId"
     :data-panel-group-direction="direction"
+    :data-panel-group-id="groupId"
   >
     <slot />
   </component>
 </template>
 
 <script setup lang="ts">
-import { computed, provide, ref, reactive, nextTick } from 'vue';
+import { computed, provide, reactive, ref, onMounted, onUnmounted, watch } from 'vue';
+import type { Direction, ResizeEvent, ResizeHandler } from '../types';
 import { PanelGroupContextKey } from '../PanelGroupContext';
-import type { PanelGroupContext, DragState, ResizeEvent } from '../PanelGroupContext';
+import type { PanelGroupContext, DragState } from '../PanelGroupContext';
 import type { PanelData, PanelConstraints } from '../Panel';
 import { useUniqueId } from '../composables/useUniqueId';
-import { computePanelFlexBoxStyle } from '../utils/computePanelFlexBoxStyle';
 import { adjustLayoutByDelta } from '../utils/adjustLayoutByDelta';
 import { calculateDeltaPercentage } from '../utils/calculateDeltaPercentage';
+import { calculateUnsafeDefaultLayout } from '../utils/calculateUnsafeDefaultLayout';
+import { computePanelFlexBoxStyle } from '../utils/computePanelFlexBoxStyle';
+import { determinePivotIndices } from '../utils/determinePivotIndices';
 import { getResizeEventCursorPosition } from '../utils/events/getResizeEventCursorPosition';
-import { areEqual } from '../utils/arrays';
-
-// 简化的pivot索引确定函数
-const determinePivotIndices = (dragHandleId: string): [number, number] => {
-  // 从dragHandleId解析handle的序号
-  console.log('Determining pivot for handle:', dragHandleId);
-  
-  if (dragHandleId.includes('handle-0')) {
-    return [0, 1]; // 第一个handle控制第1和第2个面板
-  } else if (dragHandleId.includes('handle-1')) {
-    return [1, 2]; // 第二个handle控制第2和第3个面板
-  }
-  
-  return [0, 1]; // 默认值
-};
+import { validatePanelGroupLayout } from '../utils/validatePanelGroupLayout';
+import { fuzzyLayoutsEqual } from '../utils/numbers/fuzzyLayoutsEqual';
+import { 
+  registerResizeHandle as globalRegisterResizeHandle,
+  reportConstraintsViolation,
+  EXCEEDED_HORIZONTAL_MIN,
+  EXCEEDED_HORIZONTAL_MAX,
+  EXCEEDED_VERTICAL_MIN,
+  EXCEEDED_VERTICAL_MAX,
+  type ResizeHandlerAction,
+  type SetResizeHandlerState
+} from '../utils/panelResizeHandleRegistry';
 
 export interface PanelGroupProps {
   id?: string | null;
+  direction: Direction;
   className?: string;
-  direction: 'horizontal' | 'vertical';
   style?: Record<string, any>;
   tagName?: string;
-  autoSaveId?: string | null;
+  keyboardResizeBy?: number | null;
+  onLayout?: (layout: number[]) => void;
 }
 
 const props = withDefaults(defineProps<PanelGroupProps>(), {
   className: '',
   style: () => ({}),
   tagName: 'div',
+  keyboardResizeBy: null,
 });
 
 const emit = defineEmits<{
@@ -62,6 +64,7 @@ const panelGroupElementRef = ref<HTMLElement>();
 const dragState = ref<DragState | null>(null);
 const layout = ref<number[]>([]);
 const panelDataArray = ref<PanelData[]>([]);
+const prevDeltaRef = ref<number>(0);
 
 const groupStyle = computed(() => {
   return {
@@ -74,78 +77,153 @@ const groupStyle = computed(() => {
   };
 });
 
-// 拖拽处理函数
-const startDragging = (dragHandleId: string, event: ResizeEvent) => {
-  const panelGroupElement = panelGroupElementRef.value;
-  if (!panelGroupElement) return;
+// React版本的registerResizeHandle实现
+const registerResizeHandle = (dragHandleId: string): ResizeHandler => {
+  let isRTL = false;
 
-  const handleElement = panelGroupElement.querySelector(
+  const panelGroupElement = panelGroupElementRef.value;
+  if (panelGroupElement) {
+    const style = window.getComputedStyle(panelGroupElement, null);
+    if (style.getPropertyValue("direction") === "rtl") {
+      isRTL = true;
+    }
+  }
+
+  return function resizeHandler(event: ResizeEvent) {
+    event.preventDefault();
+
+    const panelGroupElement = panelGroupElementRef.value;
+    if (!panelGroupElement) {
+      return;
+    }
+
+    const { initialLayout } = dragState.value ?? {};
+
+    const pivotIndices = determinePivotIndices(
+      groupId,
+      dragHandleId,
+      panelGroupElement
+    );
+
+    const currentCursorPosition = getResizeEventCursorPosition(props.direction, event);
+    const { initialCursorPosition } = dragState.value || { initialCursorPosition: currentCursorPosition };
+    
+    let delta = calculateDeltaPercentage(
+      { clientX: ('clientX' in event) ? event.clientX : 0, clientY: ('clientY' in event) ? event.clientY : 0 },
+      props.direction,
+      initialCursorPosition,
+      panelGroupElement
+    );
+
+    const isHorizontal = props.direction === "horizontal";
+
+    if (isHorizontal && isRTL) {
+      delta = -delta;
+    }
+
+    const panelConstraints = panelDataArray.value.map(
+      (panelData) => panelData.constraints
+    );
+
+    const nextLayout = adjustLayoutByDelta({
+      delta,
+      initialLayout: initialLayout ?? layout.value,
+      panelConstraints,
+      pivotIndices,
+      prevLayout: layout.value,
+      trigger: isKeyDown(event) ? "keyboard" : "mouse-or-touch",
+    });
+
+    const layoutChanged = !fuzzyLayoutsEqual(layout.value, nextLayout);
+
+    // Only update the cursor for layout changes triggered by touch/mouse events (not keyboard)
+    // Update the cursor even if the layout hasn't changed (we may need to show an invalid cursor state)
+    if (isPointerEvent(event) || isMouseEvent(event)) {
+      // Watch for multiple subsequent deltas; this might occur for tiny cursor movements.
+      // In this case, Panel sizes might not change–
+      // but updating cursor in this scenario would cause a flicker.
+      if (prevDeltaRef.value != delta) {
+        prevDeltaRef.value = delta;
+
+        if (!layoutChanged && delta !== 0) {
+          // If the pointer has moved too far to resize the panel any further, note this so we can update the cursor.
+          // This mimics VS Code behavior.
+          if (isHorizontal) {
+            reportConstraintsViolation(
+              dragHandleId,
+              delta < 0 ? EXCEEDED_HORIZONTAL_MIN : EXCEEDED_HORIZONTAL_MAX
+            );
+          } else {
+            reportConstraintsViolation(
+              dragHandleId,
+              delta < 0 ? EXCEEDED_VERTICAL_MIN : EXCEEDED_VERTICAL_MAX
+            );
+          }
+        } else {
+          reportConstraintsViolation(dragHandleId, 0);
+        }
+      }
+    }
+
+    if (layoutChanged) {
+      layout.value = nextLayout;
+
+      if (props.onLayout) {
+        props.onLayout(nextLayout);
+      }
+
+      emit('layout', nextLayout);
+    }
+  };
+};
+
+// 判断事件类型的辅助函数
+function isKeyDown(event: ResizeEvent): event is KeyboardEvent {
+  return event.type === 'keydown';
+}
+
+function isPointerEvent(event: ResizeEvent): event is PointerEvent {
+  return event.type.startsWith('pointer');
+}
+
+function isMouseEvent(event: ResizeEvent): event is MouseEvent {
+  return event.type.startsWith('mouse');
+}
+
+// React版本的startDragging实现
+const startDragging = (dragHandleId: string, event: ResizeEvent) => {
+  if (!panelGroupElementRef.value) {
+    return;
+  }
+
+  const handleElement = panelGroupElementRef.value.querySelector(
     `[data-panel-resize-handle-id="${dragHandleId}"]`
   ) as HTMLElement;
   
-  if (!handleElement) return;
+  if (!handleElement) {
+    console.error(`Drag handle element not found for id "${dragHandleId}"`);
+    return;
+  }
 
-  const initialCursorPosition = getResizeEventCursorPosition(props.direction, event);
-  const dragHandleRect = handleElement.getBoundingClientRect();
+  const initialCursorPosition = getResizeEventCursorPosition(
+    props.direction,
+    event
+  );
 
   dragState.value = {
     dragHandleId,
-    dragHandleRect,
+    dragHandleRect: handleElement.getBoundingClientRect(),
     initialCursorPosition,
     initialLayout: [...layout.value],
   };
-
-  console.log('Start dragging:', dragState.value);
 };
 
 const stopDragging = () => {
-  console.log('Stop dragging');
   dragState.value = null;
 };
 
-const handleMouseMove = (event: MouseEvent) => {
-  if (!dragState.value || !panelGroupElementRef.value) return;
-
-  const { initialCursorPosition, initialLayout } = dragState.value;
-  
-  const deltaPercentage = calculateDeltaPercentage(
-    event,
-    props.direction,
-    initialCursorPosition,
-    panelGroupElementRef.value
-  );
-
-  // 根据拖拽的handle确定相邻面板
-  const pivotIndices = determinePivotIndices(dragState.value.dragHandleId);
-  
-  const nextLayout = adjustLayoutByDelta({
-    delta: deltaPercentage,
-    initialLayout,
-    panelConstraints: panelDataArray.value.map(p => p.constraints),
-    pivotIndices,
-    prevLayout: layout.value,
-    trigger: "mouse-or-touch",
-  });
-
-  if (!areEqual(layout.value, nextLayout)) {
-    layout.value = nextLayout;
-    emit('layout', nextLayout);
-  }
-};
-
-// 添加全局事件监听
-const addGlobalEventListeners = () => {
-  document.addEventListener('mousemove', handleMouseMove);
-  document.addEventListener('mouseup', stopDragging);
-};
-
-const removeGlobalEventListeners = () => {
-  document.removeEventListener('mousemove', handleMouseMove);
-  document.removeEventListener('mouseup', stopDragging);
-};
-
-// 创建响应式的上下文实现
-const context: PanelGroupContext = {
+// 创建上下文
+const context: PanelGroupContext = reactive({
   collapsePanel: (panelData: PanelData) => {
     console.log('collapsePanel', panelData);
   },
@@ -179,46 +257,44 @@ const context: PanelGroupContext = {
     console.log('reevaluatePanelConstraints', panelData, prevConstraints);
   },
   registerPanel: (panelData: PanelData) => {
-    console.log('Registering panel:', panelData.id, panelData.constraints);
     panelDataArray.value.push(panelData);
-    
-    // 重新计算布局
-    const totalPanels = panelDataArray.value.length;
-    const newLayout: number[] = [];
-    let totalSize = 0;
-    
-    // 计算有默认大小的面板
-    for (const panel of panelDataArray.value) {
-      if (panel.constraints.defaultSize != null) {
-        newLayout.push(panel.constraints.defaultSize);
-        totalSize += panel.constraints.defaultSize;
+    panelDataArray.value.sort((panelA, panelB) => {
+      const orderA = panelA.order;
+      const orderB = panelB.order;
+      if (orderA == null && orderB == null) {
+        return 0;
+      } else if (orderA == null) {
+        return -1;
+      } else if (orderB == null) {
+        return 1;
       } else {
-        newLayout.push(0); // 临时占位
+        return orderA - orderB;
       }
-    }
-    
-    // 为没有默认大小的面板分配剩余空间
-    const remainingSize = 100 - totalSize;
-    const panelsWithoutDefault = newLayout.filter(size => size === 0).length;
-    const defaultSizeForRest = panelsWithoutDefault > 0 ? remainingSize / panelsWithoutDefault : 0;
-    
-    for (let i = 0; i < newLayout.length; i++) {
-      if (newLayout[i] === 0) {
-        newLayout[i] = defaultSizeForRest;
+    });
+
+    // 重新计算布局
+    const unsafeLayout = calculateUnsafeDefaultLayout({
+      panelDataArray: panelDataArray.value,
+    });
+
+    const nextLayout = validatePanelGroupLayout({
+      layout: unsafeLayout,
+      panelConstraints: panelDataArray.value.map(
+        (panelData) => panelData.constraints
+      ),
+    });
+
+    if (!fuzzyLayoutsEqual(layout.value, nextLayout)) {
+      layout.value = nextLayout;
+      
+      if (props.onLayout) {
+        props.onLayout(nextLayout);
       }
+      
+      emit('layout', nextLayout);
     }
-    
-    layout.value = newLayout;
-    console.log('New layout after registration:', layout.value);
-    console.log('Total panels:', panelDataArray.value.length);
-    emit('layout', layout.value);
   },
-  registerResizeHandle: (dragHandleId: string) => {
-    return (event: ResizeEvent) => {
-      startDragging(dragHandleId, event);
-      addGlobalEventListeners();
-    };
-  },
+  registerResizeHandle,
   resizePanel: (panelData: PanelData, size: number) => {
     const index = panelDataArray.value.findIndex(pd => pd.id === panelData.id);
     if (index !== -1) {
@@ -226,10 +302,7 @@ const context: PanelGroupContext = {
     }
   },
   startDragging,
-  stopDragging: () => {
-    stopDragging();
-    removeGlobalEventListeners();
-  },
+  stopDragging,
   unregisterPanel: (panelData: PanelData) => {
     const index = panelDataArray.value.findIndex(pd => pd.id === panelData.id);
     if (index !== -1) {
@@ -245,13 +318,17 @@ const context: PanelGroupContext = {
         }
       }
       
+      if (props.onLayout) {
+        props.onLayout(layout.value);
+      }
+      
       emit('layout', layout.value);
     }
   },
   get panelGroupElement() {
     return panelGroupElementRef.value || null;
   },
-};
+});
 
-provide(PanelGroupContextKey, reactive(context));
+provide(PanelGroupContextKey, context);
 </script> 

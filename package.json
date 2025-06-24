@@ -1,0 +1,14 @@
+{
+  "name": "vue-resizable-panels-workspace",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Vue.js version of react-resizable-panels",
+  "scripts": {
+    "build": "pnpm -r build",
+    "dev": "pnpm --filter vue-resizable-panels-website dev",
+    "type-check": "pnpm -r type-check"
+  },
+  "devDependencies": {
+    "typescript": "^5.0.0"
+  }
+} 
